@@ -26,7 +26,8 @@ Only the show that was just watched is synced, which keeps the run fast.
 | `TautulliSyncHelper.pyw` | Local launcher. Tautulli runs `.pyw` files with `pythonw` (no console window); this launcher hands over to the virtualenv interpreter that actually has the dependencies installed. |
 | `.venv/` | Virtualenv with the pinned `requirements.txt`. Gitignored. |
 | `logs/tautulli_sync.log` | Output of every sync run. Gitignored. |
-| `custom_mappings.yaml` | Optional manual Plex title -> AniList ID mappings. Gitignored. Copy `custom_mappings.yaml.example` to create it. |
+| `custom_mappings.yaml` | Manual Plex title -> AniList ID mappings. Gitignored (upstream convention), contents documented below. |
+| `PlexAniSync.log`, `PlexAniSync-DEBUG.log` | Written by the full sync script. Gitignored. |
 
 ## Tautulli notification agent
 
@@ -59,16 +60,36 @@ which the PlexAniSync wiki requires, so no change was needed there.
 .\.venv\Scripts\python.exe PlexAniSync.py
 ```
 
+## Custom mappings
+
+Two shows are titled differently on Plex and AniList, so `custom_mappings.yaml`
+pins them to the right AniList ID:
+
+| Plex title | AniList ID | AniList title |
+| --- | --- | --- |
+| `#I'm Looking for Zombie` | 199007 | `#I'm Looking For a Zombie` |
+| `Sorairo Utility` | 174596 | `Sorairo Utility (TV)` |
+
+Without these, the automatic title matching fails for both. `custom_mappings.yaml`
+is gitignored by upstream, so recreate it from this table if it goes missing.
+
 ## Notes
 
-- The AniList access token is only valid for **one year**. Get a new one from
+- The AniList access token is only valid for **one year** (this one expires
+  2027-11-10). Get a new one from
   <https://anilist.co/api/v2/oauth/authorize?client_id=1549&response_type=token>
   and replace `access_token` in `settings.ini`.
 - `skip_list_update = True` in `settings.ini` means "match but do not write".
-  Set it to `False` to let the sync actually update AniList.
+  It is currently `False`, so the sync really does update the AniList list.
 - The **Anime TVDB** library is matched with the TheTVDB agent, so PlexAniSync
   falls back to title/year matching against AniList. Switching that library to
   the HAMA agent gives it exact AniList IDs and therefore much better matches.
 - The trigger only fires for the **Anime TVDB** library. To also sync the
   **Anime Movies** library, add `Anime Movies` to the `library_name` condition
   of the notification agent.
+- PlexAniSync counts watched episodes in a season as the **highest episode
+  index** that is watched, not as the number of watched episodes. That is
+  correct for this library, because the AniList progress of every currently
+  tracked show already equals that value.
+- An AniList list entry whose status is `COMPLETED` is never written to, so
+  finished shows cannot be overwritten by a higher Plex count.
